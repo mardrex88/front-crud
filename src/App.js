@@ -1,4 +1,5 @@
-import React, {createContext, useContext, useReducer, useEffect, useState, useRef} from 'react';
+import React, {createContext, useContext, useReducer,  useState, useRef} from 'react';
+import List from './components/List';
 
 
 const HOST_API = "http://localhost:8080/api";
@@ -44,7 +45,7 @@ console.log("onAdd")
     const request = {
       name: state.name,
       id: item.id,
-      isCompleted: item.isCompleted
+      completed: item.completed
     };
 
     fetch(HOST_API+"/"+item.id+"/todo",{
@@ -75,62 +76,6 @@ console.log("onAdd")
     
   </form>
 }
-const List = () =>{
-
-  const { dispatch, state } = useContext(Store);
-
-  useEffect(()=> {
-    fetch(HOST_API+"/todos")
-    .then(response => response.json())
-    .then((list) => {
-      dispatch({ type:"update-list", list })
-    })
-  },[state.list.length,dispatch]);
-
-
-  const onDelete = (id) => {
-    fetch(HOST_API+"/"+id+"/todo",{
-      method: "DELETE"
-    })
-    .then((list)=> {
-      dispatch({ type: "delete-item", id});
-    });
-  };
-
-  const onEdit= (todo) => {
-    dispatch({ type: "edit-item", item: todo});
-    
-  };
-
-  return <div>
-    <table>
-      <thead>
-        <tr>  
-          <td>ID</td>
-          <td>Nombre</td>
-          <td>¿Está Completado?</td>
-        </tr>
-      </thead>
-      <tbody>
-        {
-        state.list.map((todo) => {
-            return <tr key={todo.id}>
-                <td>{todo.id}</td>
-                <td>{todo.name}</td>
-                <td>{todo.isCompleted ===true ?"SI":"NO"}</td>
-                <td>
-                  <button onClick={()=>onDelete(todo.id)}>Eliminar</button>
-                  <button onClick={()=>onEdit(todo)}>Editar</button>
-                </td>
-                <td>
-                </td>
-            </tr>
-          })
-        }
-      </tbody>
-    </table>
-  </div>
-}
 
 function reducer(state , action) {
     switch (action.type) {
@@ -146,10 +91,21 @@ function reducer(state , action) {
         });
           return { ...state, list: listUpdateEdit, item: {}}
 
+        case 'completed-item':
+          const listUpdateCompleted = state.list.map((item)=> {
+            if(item.id === action.item.id){
+                return action.item;
+            }
+            return item
+          });
+            return { ...state, list: listUpdateCompleted, item: {}}
       case 'add-item':
         const newList = state.list;
         newList.push(action.item);
       return { ...state, list: newList}
+
+      case 'complete-item':
+      return { ...state, item: action.item ,list: state.list}
 
       case 'edit-item':
       return { ...state, item: action.item}
@@ -176,7 +132,7 @@ function App() {
   return (
     <StoreProvider>
       <Form/>
-      <List/>
+      <List context={Store}/>
     </StoreProvider>
   );
 }
